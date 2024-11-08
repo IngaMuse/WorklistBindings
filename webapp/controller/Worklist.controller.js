@@ -1,109 +1,98 @@
-/*global location history */
-sap.ui.define([
-		"zjblessons/WorklistBindings/controller/BaseController",
-		"sap/ui/model/json/JSONModel",
-		"zjblessons/WorklistBindings/model/formatter",
-		"sap/ui/model/Filter",
-		"sap/ui/model/FilterOperator"
-	], function (BaseController, JSONModel, formatter, Filter, FilterOperator) {
-		"use strict";
+sap.ui.define(
+  [
+    "zjblessons/WorklistBindings/controller/BaseController",
+    "sap/ui/model/json/JSONModel",
+    "zjblessons/WorklistBindings/model/formatter",
+    "sap/ui/model/Sorter",
+  ],
+  function (
+    BaseController,
+    JSONModel,
+    formatter,
+    Sorter,
+  ) {
+    "use strict";
 
-		return BaseController.extend("zjblessons.WorklistBindings.controller.Worklist", {
+    return BaseController.extend("zjblessons.WorklistBinding.controller.WorklistBindings", {
+      formatter: formatter,
 
-			formatter: formatter,
+      onInit: function () {
+        const oViewModel = new JSONModel({
+          sCount: "0",
+          busy: false,
+          busyIndicatorDelay: 0,
+        });
+        this.setModel(oViewModel, "worklistView");
+      },
 
-			onInit : function () {
-				var oViewModel,
-					iOriginalBusyDelay,
-					oTable = this.byId("table");
+      onBeforeRendering: function () {
+        this._bindTable();
+      },
 
-				iOriginalBusyDelay = oTable.getBusyIndicatorDelay();
-				// keeps the search state
-				this._aTableSearchState = [];
+      _bindTable() {
+        const oTable = this.getView().byId("table");
+        oTable.bindItems({
+          path: "/zjblessons_base_Headers",
+          sorter: [new Sorter("DocumentDate", true)],
+          template: this._getTableTemplate(),
+          urlParameters: {
+            $select:
+              "HeaderID,DocumentNumber,DocumentDate,PlantText,RegionText,Description,Created",
+          },
+          events: {
+            dataRequested: (oData) => {
+              this._getTableCounter();
+            },
+          },
+        });
+      },
 
-				// Model used to manipulate control states
-				oViewModel = new JSONModel({
-					worklistTableTitle : this.getResourceBundle().getText("worklistTableTitle"),
-					shareOnJamTitle: this.getResourceBundle().getText("worklistTitle"),
-					shareSendEmailSubject: this.getResourceBundle().getText("shareSendEmailWorklistSubject"),
-					shareSendEmailMessage: this.getResourceBundle().getText("shareSendEmailWorklistMessage", [location.href]),
-					tableNoDataText : this.getResourceBundle().getText("tableNoDataText"),
-					tableBusyDelay : 0
-				});
-				this.setModel(oViewModel, "worklistView");
+      _getTableCounter() {
+        this.getView()
+          .getModel()
+          .read("/zjblessons_base_Headers/$count", {
+            success: (sCount) => {
+              this.getModel("worklistView").setProperty("/sCount", sCount);
+            },
+          });
+      },
 
-				// Make sure, busy indication is showing immediately so there is no
-				// break after the busy indication for loading the view's meta data is
-				// ended (see promise 'oWhenMetadataIsLoaded' in AppController)
-				oTable.attachEventOnce("updateFinished", function(){
-					// Restore original busy indicator delay for worklist's table
-					oViewModel.setProperty("/tableBusyDelay", iOriginalBusyDelay);
-				});
-			},
-			onUpdateFinished : function (oEvent) {
-				// update the worklist's object counter after the table update
-				var sTitle,
-					oTable = oEvent.getSource(),
-					iTotalItems = oEvent.getParameter("total");
-				// only update the counter if the length is final and
-				// the table is not empty
-				if (iTotalItems && oTable.getBinding("items").isLengthFinal()) {
-					sTitle = this.getResourceBundle().getText("worklistTableTitleCount", [iTotalItems]);
-				} else {
-					sTitle = this.getResourceBundle().getText("worklistTableTitle");
-				}
-				this.getModel("worklistView").setProperty("/worklistTableTitle", sTitle);
-			},
+      _getTableTemplate() {
+        const oTemplate = new sap.m.ColumnListItem({
+          highlight: "{= ${Version} === 'A' ? 'Success' : 'Error'}",
+          type: "Navigation",
+          cells: [
+            new sap.m.Text({
+              text: "{DocumentNumber}",
+            }),
+            new sap.m.Text({
+              text: {
+                path: "DocumentDate",
+                type: "sap.ui.model.type.Date",
+                formatOptions: { style: "short" },
+              },
+            }),
+            new sap.m.Text({
+              text: "{PlantText}",
+            }),
+            new sap.m.Text({
+              text: "{RegionText}",
+            }),
+            new sap.m.Text({
+              text: "{Description}",
+            }),
+            new sap.m.Text({
+              text: {
+                path: "Created",
+                type: "sap.ui.model.type.Date",
+                formatOptions: { style: "short" },
+              },
+            }),
+          ],
+        });
+        return oTemplate;
+      }
 
-
-			onPress : function (oEvent) {
-				// The source is the list item that got pressed
-				this._showObject(oEvent.getSource());
-			},
-
-			onNavBack : function() {
-				history.go(-1);
-			},
-
-
-			onSearch : function (oEvent) {
-				if (oEvent.getParameters().refreshButtonPressed) {
-					this.onRefresh();
-				} else {
-					var aTableSearchState = [];
-					var sQuery = oEvent.getParameter("query");
-
-					if (sQuery && sQuery.length > 0) {
-						aTableSearchState = [new Filter("DocumentNumber", FilterOperator.Contains, sQuery)];
-					}
-					this._applySearch(aTableSearchState);
-				}
-
-			},
-
-
-			onRefresh : function () {
-				var oTable = this.byId("table");
-				oTable.getBinding("items").refresh();
-			},
-
-			_showObject : function (oItem) {
-				this.getRouter().navTo("object", {
-					objectId: oItem.getBindingContext().getProperty("HeaderID")
-				});
-			},
-
-
-			_applySearch: function(aTableSearchState) {
-				var oTable = this.byId("table"),
-					oViewModel = this.getModel("worklistView");
-				oTable.getBinding("items").filter(aTableSearchState, "Application");
-				// changes the noDataText of the list in case there are no filter results
-				if (aTableSearchState.length !== 0) {
-					oViewModel.setProperty("/tableNoDataText", this.getResourceBundle().getText("worklistNoDataWithSearchText"));
-				}
-			}
-
-		});
-	}
+    });
+  }
 );
