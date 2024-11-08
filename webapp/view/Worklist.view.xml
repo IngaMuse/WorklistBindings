@@ -4,12 +4,9 @@
 	xmlns:mvc="sap.ui.core.mvc">
 
 <Page 
+	title="{i18n>worklistTitle} | {i18n>itemsCount} ({= ${worklistView>/sCount}})"
+	titleLevel="H2"
 	>
-	<customHeader>
-		<OverflowToolbar>
-			<Title id='tableHeader' text="{i18n>worklistTitle}"/>
-		</OverflowToolbar>
-	</customHeader>
 		<Table 
 				id='table' 
 				width="auto" 
@@ -17,7 +14,7 @@
 				growingScrollToLoad="true" >
 			<headerToolbar>
 				<OverflowToolbar>
-					<Title  text="{i18n>itemsCount} ({= ${worklistView>/sCount}})"/>
+					<Title id='tableHeader' level="H3" text="{i18n>itemsCount} ({= ${worklistView>/sCount}})"/>
 					<ToolbarSpacer />
 				</OverflowToolbar>
 			</headerToolbar>

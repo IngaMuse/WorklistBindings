@@ -57,9 +57,9 @@ sap.ui.define(
           });
       },
 
-      _getTableTemplate() {
+			_getTableTemplate() {
         const oTemplate = new sap.m.ColumnListItem({
-          highlight: "{= ${Version} === 'A' ? 'Success' : 'Error'}",
+          highlight: "{= ${RegionText} ? 'Success' : 'Error'}",
           type: "Navigation",
           cells: [
             new sap.m.Text({
