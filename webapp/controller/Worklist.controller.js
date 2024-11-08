@@ -3,13 +3,13 @@ sap.ui.define(
     "zjblessons/WorklistBindings/controller/BaseController",
     "sap/ui/model/json/JSONModel",
     "zjblessons/WorklistBindings/model/formatter",
-    "sap/ui/model/Sorter",
+		"sap/ui/model/Sorter"
   ],
   function (
     BaseController,
     JSONModel,
     formatter,
-    Sorter,
+		Sorter,
   ) {
     "use strict";
 
@@ -47,14 +47,13 @@ sap.ui.define(
         });
       },
 
-      _getTableCounter() {
-        this.getView()
-          .getModel()
-          .read("/zjblessons_base_Headers/$count", {
-            success: (sCount) => {
-              this.getModel("worklistView").setProperty("/sCount", sCount);
-            },
-          });
+			_getTableCounter() {
+				const oTable = this.getView().byId("table");
+				const oBinding = oTable.getBinding("items");
+				oBinding.attachChange(function() {
+						const sCount = oBinding.getLength();
+						this.getModel("worklistView").setProperty("/sCount", sCount);
+				}, this);
       },
 
 			_getTableTemplate() {
@@ -91,7 +90,23 @@ sap.ui.define(
           ],
         });
         return oTemplate;
-      }
+			},
+
+			onSelectionChange: function () {
+				const oTable = this.byId("table"),
+					aSelectedItems = oTable.getSelectedItems(),
+					oInput = this.byId("changeDescriptionID");
+          oInput.setEnabled(aSelectedItems.length > 0);
+      },
+			
+			onChangeDescription: function (oEvent) {
+        const oTable = this.byId("table"),
+							oItem = oTable.getSelectedItems()[0],
+          		oContext = oItem.getBindingContext(),
+				      sValue = oEvent.getParameter("value");
+				oContext.getModel().setProperty("Description", sValue, oContext);
+        oContext.getModel().refresh(true);
+      },
 
     });
   }

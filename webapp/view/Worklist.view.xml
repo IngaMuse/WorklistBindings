@@ -9,6 +9,9 @@
 	>
 		<Table 
 				id='table' 
+				itemPress = 'onItemSelect'
+				mode="SingleSelect"
+				selectionChange=".onSelectionChange"
 				width="auto" 
 				growing="true"
 				growingScrollToLoad="true" >
@@ -16,6 +19,16 @@
 				<OverflowToolbar>
 					<Title id='tableHeader' level="H3" text="{i18n>itemsCount} ({= ${worklistView>/sCount}})"/>
 					<ToolbarSpacer />
+					<Label
+											text="{i18n>changeDescriptionLabel}"
+											labelFor="changeDescriptionID"
+										/>
+					<Input
+								id='changeDescriptionID'
+					      width="10%"
+                value="{Description}"
+                change="onChangeDescription"
+								enabled="false"/>
 				</OverflowToolbar>
 			</headerToolbar>
 			<columns>

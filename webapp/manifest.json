@@ -68,7 +68,11 @@
 			},
 			"": {
 				"dataSource": "mainService",
-				"preload": true
+				"preload": true,
+				"settings": {
+					"defaultCountMode": "Inline",
+					"defaultBindingMode": "OneWay"
+				}
 			}
 		},
 		"routing": {
@@ -92,13 +96,6 @@
 					"target": [
 						"worklist"
 					]
-				},
-				{
-					"pattern": "zjblessons_base_Headers/{objectId}",
-					"name": "object",
-					"target": [
-						"object"
-					]
 				}
 			],
 			"targets": {
@@ -107,20 +104,6 @@
 					"viewId": "worklist",
 					"viewLevel": 1,
 					"title": "{i18n>worklistViewTitle}"
-				},
-				"object": {
-					"viewName": "Object",
-					"viewId": "object",
-					"viewLevel": 2,
-					"title": "{i18n>objectViewTitle}"
-				},
-				"objectNotFound": {
-					"viewName": "ObjectNotFound",
-					"viewId": "objectNotFound"
-				},
-				"notFound": {
-					"viewName": "NotFound",
-					"viewId": "notFound"
 				}
 			}
 		}
