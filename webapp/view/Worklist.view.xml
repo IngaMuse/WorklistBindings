@@ -17,7 +17,10 @@
 				growingScrollToLoad="true" >
 			<headerToolbar>
 				<OverflowToolbar>
-					<Title id='tableHeader' level="H3" text="{i18n>itemsCount} ({= ${worklistView>/sCount}})"/>
+						<Button
+						text="{i18n>buttonGroup}" 
+						press=".onToggleGrouping"
+						/>
 					<ToolbarSpacer />
 					<Label
 											text="{i18n>changeDescriptionLabel}"
