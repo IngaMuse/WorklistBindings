@@ -50,6 +50,7 @@ sap.ui.define(
           oJsonModel.setData({ aData });
           this.getView().setModel(oJsonModel, "jsonModel");
           this._getTableCounter();
+          this._onSortOrderDefault()
         },
 
         onDataLoadError: function (oError) {
@@ -234,6 +235,13 @@ sap.ui.define(
             this.byId(filterType).setText(this.getResourceBundle().getText('ResetFilter'));
           }
         },
+
+        _onSortOrderDefault: function () {
+          const oTable = this.byId("table");
+          const oBinding = oTable.getBinding("items");
+          const defaultSorter = new Sorter("Order", false);
+          oBinding.sort(defaultSorter);
+        }
       }
     );
   }
