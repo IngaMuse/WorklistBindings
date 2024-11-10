@@ -22,7 +22,7 @@
 				  sourceAggregation="items"
 				  targetAggregation="items"
 					dropPosition="Between"
-					drop="onDropSelectedProductsTable"
+					drop="onDropSelectedItems"
 				/>
 			</dragDropConfig>
 			<headerToolbar>
