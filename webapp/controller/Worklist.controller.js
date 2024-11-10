@@ -1,165 +1,248 @@
-/*global location history */
-sap.ui.define([
-		"zjblessons/WorklistBindings/controller/BaseController",
-		"sap/ui/model/json/JSONModel",
-		"zjblessons/WorklistBindings/model/formatter",
-		"sap/ui/model/Filter",
-		"sap/ui/model/FilterOperator"
-	], function (BaseController, JSONModel, formatter, Filter, FilterOperator) {
-		"use strict";
+sap.ui.define(
+  [
+    "zjblessons/WorklistBindings/controller/BaseController",
+    "sap/ui/model/json/JSONModel",
+    "zjblessons/WorklistBindings/model/formatter",
+    "sap/ui/model/Sorter",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
+  ],
+  function (
+    BaseController,
+    JSONModel,
+    formatter,
+    Sorter,
+    Filter,
+    FilterOperator
+  ) {
+    "use strict";
 
-		return BaseController.extend("zjblessons.WorklistBindings.controller.Worklist", {
+    return BaseController.extend(
+      "zjblessons.WorklistBinding.controller.WorklistBindings",
+      {
+        formatter: formatter,
 
-			formatter: formatter,
+        onInit: function () {
+          const oViewModel = new JSONModel({
+            sCount: "0",
+            busy: false,
+            busyIndicatorDelay: 0,
+          });
+          this.setModel(oViewModel, "worklistView");
+          this._bGrouped = false;
+          this._isAndFilterActive = false;
+          this._isOrFilterActive = false;
 
-			/* =========================================================== */
-			/* lifecycle methods                                           */
-			/* =========================================================== */
+          this.getOwnerComponent()
+            .getModel()
+            .read("/zjblessons_base_Headers", {
+              success: this.onDataLoadSuccess.bind(this),
+              error: this.onDataLoadError.bind(this),
+            });
+        },
 
-			/**
-			 * Called when the worklist controller is instantiated.
-			 * @public
-			 */
-			onInit : function () {
-				var oViewModel,
-					iOriginalBusyDelay,
-					oTable = this.byId("table");
+        onDataLoadSuccess: function (oData) {
+          const oJsonModel = new JSONModel(oData.results);
+          const aData = oJsonModel.getData();
+          aData.forEach((item, index) => {
+            item.Order = index + 1;
+          });
+          oJsonModel.setData({ aData });
+          this.getView().setModel(oJsonModel, "jsonModel");
+          this._getTableCounter();
+          this._onSortOrderDefault()
+        },
 
-				// Put down worklist table's original value for busy indicator delay,
-				// so it can be restored later on. Busy handling on the table is
-				// taken care of by the table itself.
-				iOriginalBusyDelay = oTable.getBusyIndicatorDelay();
-				// keeps the search state
-				this._aTableSearchState = [];
+        onDataLoadError: function (oError) {
+          console.error("Ошибка загрузки данных: ", oError);
+        },
 
-				// Model used to manipulate control states
-				oViewModel = new JSONModel({
-					worklistTableTitle : this.getResourceBundle().getText("worklistTableTitle"),
-					shareOnJamTitle: this.getResourceBundle().getText("worklistTitle"),
-					shareSendEmailSubject: this.getResourceBundle().getText("shareSendEmailWorklistSubject"),
-					shareSendEmailMessage: this.getResourceBundle().getText("shareSendEmailWorklistMessage", [location.href]),
-					tableNoDataText : this.getResourceBundle().getText("tableNoDataText"),
-					tableBusyDelay : 0
-				});
-				this.setModel(oViewModel, "worklistView");
+        onBeforeRendering: function () {
+          this._bindTable();
+        },
 
-				// Make sure, busy indication is showing immediately so there is no
-				// break after the busy indication for loading the view's meta data is
-				// ended (see promise 'oWhenMetadataIsLoaded' in AppController)
-				oTable.attachEventOnce("updateFinished", function(){
-					// Restore original busy indicator delay for worklist's table
-					oViewModel.setProperty("/tableBusyDelay", iOriginalBusyDelay);
-				});
-			},
+        _bindTable() {
+          const oTable = this.getView().byId("table");
+          oTable.bindItems({
+            path: "jsonModel>/aData",
+            template: this._getTableTemplate(),
+            urlParameters: {
+              $select:
+                "HeaderID,DocumentNumber,DocumentDate,PlantText,RegionText,Description,Created,Order",
+            },
+            events: {
+              dataRequested: (oData) => {
+                this._getTableCounter();
+              },
+            },
+          });
+        },
 
-			/* =========================================================== */
-			/* event handlers                                              */
-			/* =========================================================== */
+        _getTableCounter() {
+          const sCount = this.getView().getModel("jsonModel").getData()
+            .aData.length;
+          this.getModel("worklistView").setProperty("/sCount", sCount);
+        },
 
-			/**
-			 * Triggered by the table's 'updateFinished' event: after new table
-			 * data is available, this handler method updates the table counter.
-			 * This should only happen if the update was successful, which is
-			 * why this handler is attached to 'updateFinished' and not to the
-			 * table's list binding's 'dataReceived' method.
-			 * @param {sap.ui.base.Event} oEvent the update finished event
-			 * @public
-			 */
-			onUpdateFinished : function (oEvent) {
-				// update the worklist's object counter after the table update
-				var sTitle,
-					oTable = oEvent.getSource(),
-					iTotalItems = oEvent.getParameter("total");
-				// only update the counter if the length is final and
-				// the table is not empty
-				if (iTotalItems && oTable.getBinding("items").isLengthFinal()) {
-					sTitle = this.getResourceBundle().getText("worklistTableTitleCount", [iTotalItems]);
-				} else {
-					sTitle = this.getResourceBundle().getText("worklistTableTitle");
-				}
-				this.getModel("worklistView").setProperty("/worklistTableTitle", sTitle);
-			},
+        _getTableTemplate() {
+          const oTemplate = new sap.m.ColumnListItem({
+            highlight: "{= ${jsonModel>RegionText} ? 'Success' : 'Error'}",
+            type: "Navigation",
+            cells: [
+              new sap.m.Text({
+                text: "{jsonModel>DocumentNumber}",
+              }),
+              new sap.m.Text({
+                text: {
+                  path: "jsonModel>DocumentDate",
+                  type: "sap.ui.model.type.Date",
+                  formatOptions: { style: "short" },
+                },
+              }),
+              new sap.m.Text({
+                text: "{jsonModel>PlantText}",
+              }),
+              new sap.m.Text({
+                text: "{jsonModel>RegionText}",
+              }),
+              new sap.m.Text({
+                text: "{jsonModel>Description}",
+              }),
+              new sap.m.Text({
+                text: {
+                  path: "jsonModel>Created",
+                  type: "sap.ui.model.type.Date",
+                  formatOptions: { style: "short" },
+                },
+              }),
+              new sap.m.Text({
+                text: "{jsonModel>Order}",
+              }),
+            ],
+          });
+          return oTemplate;
+        },
 
-			/**
-			 * Event handler when a table item gets pressed
-			 * @param {sap.ui.base.Event} oEvent the table selectionChange event
-			 * @public
-			 */
-			onPress : function (oEvent) {
-				// The source is the list item that got pressed
-				this._showObject(oEvent.getSource());
-			},
+        onSelectionChange: function () {
+          const oTable = this.byId("table"),
+            aSelectedItems = oTable.getSelectedItems(),
+            oInput = this.byId("changeDescriptionID");
+          oInput.setEnabled(aSelectedItems.length > 0);
+        },
 
-			/**
-			 * Event handler for navigating back.
-			 * We navigate back in the browser historz
-			 * @public
-			 */
-			onNavBack : function() {
-				history.go(-1);
-			},
+        onChangeDescription: function (oEvent) {
+          const oTable = this.byId("table"),
+            oItem = oTable.getSelectedItem(),
+            oContext = oItem.getBindingContext("jsonModel"),
+            sValue = oEvent.getParameter("value");
+          oContext
+            .getModel("jsonModel")
+            .setProperty("Description", sValue, oContext);
+          oContext.getModel("jsonModel").refresh(true);
+        },
+        onToggleGrouping: function () {
+          this._bGrouped = !this._bGrouped;
+          const oTable = this.byId("table"),
+            oBinding = oTable.getBinding("items");
+          let aSorters = [];
+          if (this._bGrouped) {
+            aSorters.push(new Sorter("RegionText", false, true));
+          }
+          const oCurrentSorter = oTable.getBinding("items").aSorters;
+          if (oCurrentSorter && oCurrentSorter.length > 0) {
+            for (let i = 0; i < oCurrentSorter.length; i++) {
+              if (oCurrentSorter[i].sPath !== "RegionText") {
+                aSorters.push(oCurrentSorter[i]);
+              }
+            }
+          }
+          oBinding.sort(aSorters);
+        },
 
+        onDropSelectedItems: function (oEvent) {
+          const oDraggedControl = oEvent.getParameter("draggedControl");
+          const oDroppedOnControl = oEvent.getParameter("droppedControl");
+          const dropPosition = oEvent.getParameter("dropPosition");
+          if (!oDraggedControl || !oDroppedOnControl) {
+            console.error("Invalid dragged or dropped control");
+            return;
+          }
+          const oModel = this.getView().getModel("jsonModel");
+          let aItems = oModel.getProperty("/aData");
 
-			onSearch : function (oEvent) {
-				if (oEvent.getParameters().refreshButtonPressed) {
-					// Search field's 'refresh' button has been pressed.
-					// This is visible if you select any master list item.
-					// In this case no new search is triggered, we only
-					// refresh the list binding.
-					this.onRefresh();
-				} else {
-					var aTableSearchState = [];
-					var sQuery = oEvent.getParameter("query");
+          const oDraggedBindingContext =
+            oDraggedControl.getBindingContext("jsonModel");
+          const oDroppedBindingContext =
+            oDroppedOnControl.getBindingContext("jsonModel");
 
-					if (sQuery && sQuery.length > 0) {
-						aTableSearchState = [new Filter("DocumentNumber", FilterOperator.Contains, sQuery)];
-					}
-					this._applySearch(aTableSearchState);
-				}
+          if (!oDraggedBindingContext || !oDroppedBindingContext) {
+            console.error(
+              "Binding context is undefined for dragged or dropped control"
+            );
+            return;
+          }
 
-			},
+          const draggedIndex = aItems.findIndex(
+            (item) => item.Order === oDraggedBindingContext.getObject().Order
+          );
+          const droppedIndex = aItems.findIndex(
+            (item) => item.Order === oDroppedBindingContext.getObject().Order
+          );
+          const [movedItem] = aItems.splice(draggedIndex, 1);
 
-			/**
-			 * Event handler for refresh event. Keeps filter, sort
-			 * and group settings and refreshes the list binding.
-			 * @public
-			 */
-			onRefresh : function () {
-				var oTable = this.byId("table");
-				oTable.getBinding("items").refresh();
-			},
+          if (dropPosition === "Between") {
+            aItems.splice(droppedIndex + 1, 0, movedItem);
+          } else {
+            aItems.splice(droppedIndex, 0, movedItem);
+          }
+          if (draggedIndex < droppedIndex) {
+            for (let i = draggedIndex; i <= droppedIndex; i++) {
+              aItems[i].Order = i + 1;
+            }
+          } else {
+            for (let i = droppedIndex; i <= draggedIndex; i++) {
+              aItems[i].Order = i + 1;
+            }
+          }
+          oModel.setProperty("/aData", aItems);
+        },
 
-			/* =========================================================== */
-			/* internal methods                                            */
-			/* =========================================================== */
+        onToggleFilter: function (filterType) {
+          const oTable = this.byId("table");
+          const oBinding = oTable.getBinding("items");
+          const filters = [
+            new Filter("DocumentNumber", FilterOperator.Contains, "Num"),
+            new Filter("PlantText", FilterOperator.StartsWith, "Plant"),
+          ];
+          let bActive;
+          let bAnd;
+          if (filterType === "AND") {
+            bActive = this._isAndFilterActive;
+            this._isAndFilterActive = !this._isAndFilterActive;
+            bAnd = true;
+          } else {
+            bActive = this._isOrFilterActive;
+            this._isOrFilterActive = !this._isOrFilterActive;
+            bAnd = false;
+          }
+          if (bActive) {
+            oBinding.filter([]);
+            this.byId("AND").setText(this.getResourceBundle().getText('FilterAnd'));
+            this.byId("OR").setText(this.getResourceBundle().getText('FilterOr'));
+          } else {
+            const filter = new Filter({ filters: filters, and: bAnd });
+            oBinding.filter([filter]);
+            this.byId(filterType).setText(this.getResourceBundle().getText('ResetFilter'));
+          }
+        },
 
-			/**
-			 * Shows the selected item on the object page
-			 * On phones a additional history entry is created
-			 * @param {sap.m.ObjectListItem} oItem selected Item
-			 * @private
-			 */
-			_showObject : function (oItem) {
-				this.getRouter().navTo("object", {
-					objectId: oItem.getBindingContext().getProperty("HeaderID")
-				});
-			},
-
-			/**
-			 * Internal helper method to apply both filter and search state together on the list binding
-			 * @param {sap.ui.model.Filter[]} aTableSearchState An array of filters for the search
-			 * @private
-			 */
-			_applySearch: function(aTableSearchState) {
-				var oTable = this.byId("table"),
-					oViewModel = this.getModel("worklistView");
-				oTable.getBinding("items").filter(aTableSearchState, "Application");
-				// changes the noDataText of the list in case there are no filter results
-				if (aTableSearchState.length !== 0) {
-					oViewModel.setProperty("/tableNoDataText", this.getResourceBundle().getText("worklistNoDataWithSearchText"));
-				}
-			}
-
-		});
-	}
+        _onSortOrderDefault: function () {
+          const oTable = this.byId("table");
+          const oBinding = oTable.getBinding("items");
+          const defaultSorter = new Sorter("Order", false);
+          oBinding.sort(defaultSorter);
+        }
+      }
+    );
+  }
 );
