@@ -4,8 +4,17 @@ sap.ui.define(
     "sap/ui/model/json/JSONModel",
     "zjblessons/WorklistBindings/model/formatter",
     "sap/ui/model/Sorter",
+    "sap/ui/model/Filter",
+    "sap/ui/model/FilterOperator",
   ],
-  function (BaseController, JSONModel, formatter, Sorter) {
+  function (
+    BaseController,
+    JSONModel,
+    formatter,
+    Sorter,
+    Filter,
+    FilterOperator
+  ) {
     "use strict";
 
     return BaseController.extend(
@@ -21,6 +30,8 @@ sap.ui.define(
           });
           this.setModel(oViewModel, "worklistView");
           this._bGrouped = false;
+          this._isAndFilterActive = false;
+          this._isOrFilterActive = false;
 
           this.getOwnerComponent()
             .getModel()
@@ -185,14 +196,43 @@ sap.ui.define(
           }
           if (draggedIndex < droppedIndex) {
             for (let i = draggedIndex; i <= droppedIndex; i++) {
-                aItems[i].Order = i + 1;
+              aItems[i].Order = i + 1;
             }
-        } else {
+          } else {
             for (let i = droppedIndex; i <= draggedIndex; i++) {
-                aItems[i].Order = i + 1;
+              aItems[i].Order = i + 1;
             }
           }
           oModel.setProperty("/aData", aItems);
+        },
+
+        onToggleFilter: function (filterType) {
+          const oTable = this.byId("table");
+          const oBinding = oTable.getBinding("items");
+          const filters = [
+            new Filter("DocumentNumber", FilterOperator.Contains, "Num"),
+            new Filter("PlantText", FilterOperator.StartsWith, "Plant"),
+          ];
+          let bActive;
+          let bAnd;
+          if (filterType === "AND") {
+            bActive = this._isAndFilterActive;
+            this._isAndFilterActive = !this._isAndFilterActive;
+            bAnd = true;
+          } else {
+            bActive = this._isOrFilterActive;
+            this._isOrFilterActive = !this._isOrFilterActive;
+            bAnd = false;
+          }
+          if (bActive) {
+            oBinding.filter([]);
+            this.byId("AND").setText(this.getResourceBundle().getText('FilterAnd'));
+            this.byId("OR").setText(this.getResourceBundle().getText('FilterOr'));
+          } else {
+            const filter = new Filter({ filters: filters, and: bAnd });
+            oBinding.filter([filter]);
+            this.byId(filterType).setText(this.getResourceBundle().getText('ResetFilter'));
+          }
         },
       }
     );

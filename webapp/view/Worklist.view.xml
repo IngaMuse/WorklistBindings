@@ -31,6 +31,14 @@
 						text="{i18n>buttonGroup}"
 						press=".onToggleGrouping"
 					/>
+					<Button 
+					  text="{i18n>FilterAnd}" 
+						id="AND"
+					  press=".onToggleFilter('AND')"/>
+						<Button 
+					  text="{i18n>FilterOr}" 
+						id="OR"
+					  press=".onToggleFilter('OR')"/>
 					<ToolbarSpacer />
 					<Label
 						text="{i18n>changeDescriptionLabel}"
