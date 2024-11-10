@@ -1,60 +1,73 @@
 <mvc:View
 	controllerName="zjblessons.WorklistBindings.controller.Worklist"
 	xmlns="sap.m"
-	xmlns:mvc="sap.ui.core.mvc">
-
-<Page 
-	title="{i18n>worklistTitle} | {i18n>itemsCount} ({= ${worklistView>/sCount}})"
-	titleLevel="H2"
+	xmlns:dnd="sap.ui.core.dnd"
+	xmlns:mvc="sap.ui.core.mvc"
+>
+	<Page
+		title="{i18n>worklistTitle} | {i18n>itemsCount} ({= ${worklistView>/sCount}})"
+		titleLevel="H2"
 	>
-		<Table 
-				id='table' 
-				itemPress = 'onItemSelect'
-				mode="SingleSelect"
-				selectionChange=".onSelectionChange"
-				width="auto" 
-				growing="true"
-				growingScrollToLoad="true" >
+		<Table
+			id="table"
+			itemPress="onItemSelect"
+			mode="SingleSelect"
+			selectionChange=".onSelectionChange"
+			width="auto"
+			growing="true"
+			growingScrollToLoad="true"
+		>
+			<dragDropConfig>
+				<dnd:DragDropInfo
+				  sourceAggregation="items"
+				  targetAggregation="items"
+					dropPosition="Between"
+					drop="onDropSelectedProductsTable"
+				/>
+			</dragDropConfig>
 			<headerToolbar>
 				<OverflowToolbar>
-						<Button
-						text="{i18n>buttonGroup}" 
+					<Button
+						text="{i18n>buttonGroup}"
 						press=".onToggleGrouping"
-						/>
+					/>
 					<ToolbarSpacer />
 					<Label
-											text="{i18n>changeDescriptionLabel}"
-											labelFor="changeDescriptionID"
-										/>
+						text="{i18n>changeDescriptionLabel}"
+						labelFor="changeDescriptionID"
+					/>
 					<Input
-								id='changeDescriptionID'
-					      width="10%"
-                value="{Description}"
-                change="onChangeDescription"
-								enabled="false"/>
+						id="changeDescriptionID"
+						width="10%"
+						value="{Description}"
+						change="onChangeDescription"
+						enabled="false"
+					/>
 				</OverflowToolbar>
 			</headerToolbar>
 			<columns>
 				<Column>
-					<Text text="{i18n>tableNameColumnTitle}"/>
+					<Text text="{i18n>tableNameColumnTitle}" />
 				</Column>
 				<Column>
-					<Text text="{i18n>tableNameColumnTitleDocumentDate}"/>
+					<Text text="{i18n>tableNameColumnTitleDocumentDate}" />
 				</Column>
 				<Column>
-					<Text text="{i18n>tableNameColumnTitlePlantText}"/>
+					<Text text="{i18n>tableNameColumnTitlePlantText}" />
 				</Column>
 				<Column>
-					<Text text="{i18n>tableNameColumnTitleRegionText}"/>
+					<Text text="{i18n>tableNameColumnTitleRegionText}" />
 				</Column>
 				<Column>
-					<Text text="{i18n>tableNameColumnTitleDescription}"/>
+					<Text text="{i18n>tableNameColumnTitleDescription}" />
 				</Column>
 				<Column>
-					<Text text="{i18n>tableNameColumnTitleCreated}"/>
+					<Text text="{i18n>tableNameColumnTitleCreated}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitleOrder}" />
 				</Column>
 			</columns>
 		</Table>
 	</Page>
-
 </mvc:View>

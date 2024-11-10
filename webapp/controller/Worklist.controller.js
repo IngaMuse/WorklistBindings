@@ -21,6 +21,28 @@ sap.ui.define(
           });
           this.setModel(oViewModel, "worklistView");
           this._bGrouped = false;
+
+          this.getOwnerComponent()
+            .getModel()
+            .read("/zjblessons_base_Headers", {
+              success: this.onDataLoadSuccess.bind(this),
+              error: this.onDataLoadError.bind(this),
+            });
+        },
+
+        onDataLoadSuccess: function (oData) {
+          const oJsonModel = new JSONModel(oData.results);
+          const aData = oJsonModel.getData();
+          aData.forEach((item, index) => {
+            item.Order = index + 1;
+          });
+          oJsonModel.setData({ aData });
+          this.getView().setModel(oJsonModel, "jsonModel");
+          this._getTableCounter();
+        },
+
+        onDataLoadError: function (oError) {
+          console.error("Ошибка загрузки данных: ", oError);
         },
 
         onBeforeRendering: function () {
@@ -30,12 +52,11 @@ sap.ui.define(
         _bindTable() {
           const oTable = this.getView().byId("table");
           oTable.bindItems({
-            path: "/zjblessons_base_Headers",
-            sorter: [new Sorter("DocumentDate", true)],
+            path: "jsonModel>/aData",
             template: this._getTableTemplate(),
             urlParameters: {
               $select:
-                "HeaderID,DocumentNumber,DocumentDate,PlantText,RegionText,Description,Created",
+                "HeaderID,DocumentNumber,DocumentDate,PlantText,RegionText,Description,Created,Order",
             },
             events: {
               dataRequested: (oData) => {
@@ -46,44 +67,43 @@ sap.ui.define(
         },
 
         _getTableCounter() {
-          const oTable = this.getView().byId("table");
-          const oBinding = oTable.getBinding("items");
-          oBinding.attachChange(function () {
-            const sCount = oBinding.getLength();
-            this.getModel("worklistView").setProperty("/sCount", sCount);
-          }, this);
+          const sCount = this.getView().getModel("jsonModel").getData().aData.length;
+          this.getModel("worklistView").setProperty("/sCount", sCount);
         },
 
         _getTableTemplate() {
           const oTemplate = new sap.m.ColumnListItem({
-            highlight: "{= ${RegionText} ? 'Success' : 'Error'}",
+            highlight: "{= ${jsonModel>RegionText} ? 'Success' : 'Error'}",
             type: "Navigation",
             cells: [
               new sap.m.Text({
-                text: "{DocumentNumber}",
+                text: "{jsonModel>DocumentNumber}",
               }),
               new sap.m.Text({
                 text: {
-                  path: "DocumentDate",
+                  path: "jsonModel>DocumentDate",
                   type: "sap.ui.model.type.Date",
                   formatOptions: { style: "short" },
                 },
               }),
               new sap.m.Text({
-                text: "{PlantText}",
+                text: "{jsonModel>PlantText}",
               }),
               new sap.m.Text({
-                text: "{RegionText}",
+                text: "{jsonModel>RegionText}",
               }),
               new sap.m.Text({
-                text: "{Description}",
+                text: "{jsonModel>Description}",
               }),
               new sap.m.Text({
                 text: {
-                  path: "Created",
+                  path: "jsonModel>Created",
                   type: "sap.ui.model.type.Date",
                   formatOptions: { style: "short" },
                 },
+              }),
+              new sap.m.Text({
+                text: "{jsonModel>Order}",
               }),
             ],
           });
@@ -99,11 +119,11 @@ sap.ui.define(
 
         onChangeDescription: function (oEvent) {
           const oTable = this.byId("table"),
-            oItem = oTable.getSelectedItems()[0],
-            oContext = oItem.getBindingContext(),
+            oItem = oTable.getSelectedItem(),
+            oContext = oItem.getBindingContext("jsonModel"),
             sValue = oEvent.getParameter("value");
-          oContext.getModel().setProperty("Description", sValue, oContext);
-          oContext.getModel().refresh(true);
+          oContext.getModel("jsonModel").setProperty("Description", sValue, oContext);
+          oContext.getModel("jsonModel").refresh(true);
         },
         onToggleGrouping: function () {
           this._bGrouped = !this._bGrouped;
@@ -123,6 +143,8 @@ sap.ui.define(
           }
           oBinding.sort(aSorters);
         },
+
+        onDropSelectedProductsTable: function () {},
       }
     );
   }
