@@ -27,9 +27,13 @@ sap.ui.define(
       },
 
       setAvatarSrc: function (sSrc) {
-        this.setProperty("avatarSrc", sSrc, true);
-        this._oAvatar.setSrc(sSrc);
-        return this;
+        if (sSrc && typeof sSrc === "string" && sSrc.trim() !== "") {
+          this.setProperty("avatarSrc", sSrc, true); 
+          this._oAvatar.setSrc(sSrc); 
+        } else {
+          console.warn("Invalid avatar source provided:", sSrc);
+          this._oAvatar.setSrc(this.getAvatarSrc());
+        }
       },
 
       setAvatarDisplaySize: function (sDisplaySize) {
