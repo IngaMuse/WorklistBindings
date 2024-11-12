@@ -1,72 +1,93 @@
 <mvc:View
 	controllerName="zjblessons.WorklistBindings.controller.Worklist"
 	xmlns="sap.m"
+	xmlns:dnd="sap.ui.core.dnd"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:semantic="sap.f.semantic">
-
-	<semantic:SemanticPage
-		id="page"
-		headerPinnable="false"
-		toggleHeaderOnTitleClick="false">
-
-		<semantic:titleHeading>
-			<Title text="{i18n>worklistTitle}" />
-		</semantic:titleHeading>
-
-		<semantic:content>
-			<Table
-				id="table"
-				width="auto"
-				items="{
-					path: '/zjblessons_base_Headers',
-					sorter: {
-						path: 'DocumentNumber',
-						descending: false
-					}
-				}"
-				noDataText="{worklistView>/tableNoDataText}"
-				busyIndicatorDelay="{worklistView>/tableBusyDelay}"
-				growing="true"
-				growingScrollToLoad="true"
-				updateFinished="onUpdateFinished">
-
-				<headerToolbar>
-					<Toolbar>
-						<Title id="tableHeader" text="{worklistView>/worklistTableTitle}"/>
-						<ToolbarSpacer />
-						<SearchField
-							id="searchField"
-							tooltip="{i18n>worklistSearchTooltip}"
-							search="onSearch"
-							width="auto">
-						</SearchField>
-					</Toolbar>
-				</headerToolbar>
-
-				<columns>
-					<Column id="nameColumn">
-						<Text text="{i18n>tableNameColumnTitle}" id="nameColumnTitle"/>
-					</Column>
-				</columns>
-
-				<items>
-					<ColumnListItem
-						type="Navigation"
-						press="onPress">
-						<cells>
-							<ObjectIdentifier
-								title="{DocumentNumber}"/>
-						</cells>
-					</ColumnListItem>
-				</items>
-			</Table>
-		</semantic:content>
-
-		<semantic:sendEmailAction>
-			<semantic:SendEmailAction id="shareEmail" press="onShareEmailPress"/>
-		</semantic:sendEmailAction>
-
-
-	</semantic:SemanticPage>
-
+	xmlns:custom="zjblessons.WorklistBindings.controller.controls"
+>
+	<Page
+		title="{i18n>worklistTitle} | {i18n>itemsCount} ({= ${worklistView>/sCount}})"
+		titleLevel="H2"
+	>
+		<custom:MyAvatarText
+			avatarSrc="./src/img/myAvatar.png"
+			text="Hello, SAPUI5!"
+			textWidth="80px"
+			avatarDisplaySize="L"
+			direction="Column"
+			alignItems="End"
+			textAlign="Center"
+		/>
+		<Table
+			id="table"
+			itemPress="onItemSelect"
+			mode="SingleSelect"
+			selectionChange=".onSelectionChange"
+			width="auto"
+			growing="true"
+			growingScrollToLoad="true"
+		>
+			<dragDropConfig>
+				<dnd:DragDropInfo
+					sourceAggregation="items"
+					targetAggregation="items"
+					dropPosition="Between"
+					drop="onDropSelectedItems"
+				/>
+			</dragDropConfig>
+			<headerToolbar>
+				<OverflowToolbar>
+					<Button
+						text="{i18n>buttonGroup}"
+						press=".onToggleGrouping"
+					/>
+					<Button
+						text="{i18n>FilterAnd}"
+						id="AND"
+						press=".onToggleFilter('AND')"
+					/>
+					<Button
+						text="{i18n>FilterOr}"
+						id="OR"
+						press=".onToggleFilter('OR')"
+					/>
+					<ToolbarSpacer />
+					<Label
+						text="{i18n>changeDescriptionLabel}"
+						labelFor="changeDescriptionID"
+					/>
+					<Input
+						id="changeDescriptionID"
+						width="10%"
+						value="{Description}"
+						change="onChangeDescription"
+						enabled="false"
+					/>
+				</OverflowToolbar>
+			</headerToolbar>
+			<columns>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitle}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitleDocumentDate}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitlePlantText}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitleRegionText}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitleDescription}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitleCreated}" />
+				</Column>
+				<Column>
+					<Text text="{i18n>tableNameColumnTitleOrder}" />
+				</Column>
+			</columns>
+		</Table>
+	</Page>
 </mvc:View>
