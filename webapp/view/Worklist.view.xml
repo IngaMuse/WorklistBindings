@@ -3,11 +3,21 @@
 	xmlns="sap.m"
 	xmlns:dnd="sap.ui.core.dnd"
 	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:custom="zjblessons.WorklistBindings.controller.controls"
 >
 	<Page
 		title="{i18n>worklistTitle} | {i18n>itemsCount} ({= ${worklistView>/sCount}})"
 		titleLevel="H2"
 	>
+		<custom:MyAvatarText
+			avatarSrc="./src/img/myAvatar.png"
+			text="Hello, SAPUI5!"
+			textWidth="80px"
+			avatarDisplaySize="L"
+			direction="Column"
+			alignItems="End"
+			textAlign="Center"
+		/>
 		<Table
 			id="table"
 			itemPress="onItemSelect"
@@ -19,8 +29,8 @@
 		>
 			<dragDropConfig>
 				<dnd:DragDropInfo
-				  sourceAggregation="items"
-				  targetAggregation="items"
+					sourceAggregation="items"
+					targetAggregation="items"
 					dropPosition="Between"
 					drop="onDropSelectedItems"
 				/>
@@ -31,14 +41,16 @@
 						text="{i18n>buttonGroup}"
 						press=".onToggleGrouping"
 					/>
-					<Button 
-					  text="{i18n>FilterAnd}" 
+					<Button
+						text="{i18n>FilterAnd}"
 						id="AND"
-					  press=".onToggleFilter('AND')"/>
-						<Button 
-					  text="{i18n>FilterOr}" 
+						press=".onToggleFilter('AND')"
+					/>
+					<Button
+						text="{i18n>FilterOr}"
 						id="OR"
-					  press=".onToggleFilter('OR')"/>
+						press=".onToggleFilter('OR')"
+					/>
 					<ToolbarSpacer />
 					<Label
 						text="{i18n>changeDescriptionLabel}"
